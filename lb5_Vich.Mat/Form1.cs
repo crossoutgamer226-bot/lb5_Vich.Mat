@@ -14,12 +14,8 @@ namespace lb5_Vich.Mat
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            dataGridView1.Columns[1].DefaultCellStyle.Format = "F3";
             PlotRandomPoints();
-        }
-
-        private void chart1_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void PlotRandomPoints()
@@ -60,24 +56,22 @@ namespace lb5_Vich.Mat
             // -----------------------------
             dataGridView1.Rows.Clear();
             for (int i = 0; i < 100; i++)
-            {
                 dataGridView1.Rows.Add(X[i], Y[i]);
-            }
 
             // -----------------------------
             // 2. Сглаживание (скользящее среднее)
             // -----------------------------
-            int window = 7;
-            int m = window / 2;
 
-            double[] smoothY = new double[100];
+            int window1 = 7;
+            int m1 = window1 / 2;
+            double[] smoothY1 = new double[100];
 
             for (int i = 0; i < 100; i++)
             {
                 double sum = 0;
                 int count = 0;
 
-                for (int j = i - m; j <= i + m; j++)
+                for (int j = i - m1; j <= i + m1; j++)
                 {
                     if (j >= 0 && j < 100)
                     {
@@ -86,21 +80,52 @@ namespace lb5_Vich.Mat
                     }
                 }
 
-                smoothY[i] = sum / count;
+                smoothY1[i] = sum / count;
             }
 
-            Series smoothSeries = new Series("Скользящее среднее");
-            smoothSeries.ChartType = SeriesChartType.Line;
-            smoothSeries.Color = Color.Red;
-            smoothSeries.BorderWidth = 2;
+            Series smoothSeries1 = new Series("Скользящее среднее (окно 7)");
+            smoothSeries1.ChartType = SeriesChartType.Line;
+            smoothSeries1.Color = Color.Red;
+            smoothSeries1.BorderWidth = 2;
 
             for (int i = 0; i < 100; i++)
-                smoothSeries.Points.AddXY(i, smoothY[i]);
+                smoothSeries1.Points.AddXY(i, smoothY1[i]);
 
-            chart1.Series.Add(smoothSeries);
+            chart1.Series.Add(smoothSeries1);
+
+            int window2 = 11;
+            int m2 = window2 / 2;
+            double[] smoothY2 = new double[100];
+
+            for (int i = 0; i < 100; i++)
+            {
+                double sum = 0;
+                int count = 0;
+
+                for (int j = i - m2; j <= i + m2; j++)
+                {
+                    if (j >= 0 && j < 100)
+                    {
+                        sum += Y[j];
+                        count++;
+                    }
+                }
+
+                smoothY2[i] = sum / count;
+            }
+
+            Series smoothSeries2 = new Series("Скользящее среднее (окно 11)");
+            smoothSeries2.ChartType = SeriesChartType.Line;
+            smoothSeries2.Color = Color.Orange;
+            smoothSeries2.BorderWidth = 2;
+
+            for (int i = 0; i < 100; i++)
+                smoothSeries2.Points.AddXY(i, smoothY2[i]);
+
+            chart1.Series.Add(smoothSeries2);
 
             // -----------------------------
-            // 3. Сглаживание кубическим многочленом (МНК по 5 точкам)
+            // 3. Локальное сглаживание кубическим МНК
             // -----------------------------
             double[] polyY = new double[100];
 
@@ -155,7 +180,7 @@ namespace lb5_Vich.Mat
             chart1.Series.Add(polySeries);
 
             // -----------------------------
-            // 4. Глобальный многочлен 4 степени (МНК по всем точкам)
+            // 4. Глобальный многочлен 4-й степени
             // -----------------------------
             double[] quarticCoeff = FitQuartic(X, Y);
 
@@ -183,12 +208,11 @@ namespace lb5_Vich.Mat
             chart1.ChartAreas["MainArea"].AxisX.Title = "X = i";
             chart1.ChartAreas["MainArea"].AxisY.Title = "Y, Y_smooth, Y_mnk, Y_quartic";
 
-            // Применяем состояние чекбоксов к сериям
             ApplyCheckBoxVisibility();
         }
 
         // ---------------------------------------------------------
-        // МНК для кубического многочлена (локально по 5 точкам)
+        // МНК для кубического многочлена
         // ---------------------------------------------------------
         private double[] FitCubic(double[] x, double[] y)
         {
@@ -236,7 +260,7 @@ namespace lb5_Vich.Mat
         }
 
         // ---------------------------------------------------------
-        // МНК для многочлена 4 степени (по всем точкам)
+        // МНК для многочлена 4 степени
         // ---------------------------------------------------------
         private double[] FitQuartic(double[] x, double[] y)
         {
@@ -369,24 +393,26 @@ namespace lb5_Vich.Mat
             return x;
         }
 
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-
-        }
-
         // ---------------------------------------------------------
         // ОБРАБОТЧИКИ CheckBox
         // ---------------------------------------------------------
+
         private void cbRaw_CheckedChanged(object sender, EventArgs e)
         {
             if (chart1.Series.IndexOf("Исходные точки") >= 0)
                 chart1.Series["Исходные точки"].Enabled = cbRaw.Checked;
         }
 
-        private void cbSmooth_CheckedChanged(object sender, EventArgs e)
+        private void cbSmooth7_CheckedChanged(object sender, EventArgs e)
         {
-            if (chart1.Series.IndexOf("Скользящее среднее") >= 0)
-                chart1.Series["Скользящее среднее"].Enabled = cbSmooth.Checked;
+            if (chart1.Series.IndexOf("Скользящее среднее (окно 7)") >= 0)
+                chart1.Series["Скользящее среднее (окно 7)"].Enabled = cbSmooth7.Checked;
+        }
+
+        private void cbSmooth11_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chart1.Series.IndexOf("Скользящее среднее (окно 11)") >= 0)
+                chart1.Series["Скользящее среднее (окно 11)"].Enabled = cbSmooth11.Checked;
         }
 
         private void cbCubic_CheckedChanged(object sender, EventArgs e)
@@ -401,15 +427,16 @@ namespace lb5_Vich.Mat
                 chart1.Series["Глобальный многочлен 4-й степени"].Enabled = cbQuartic.Checked;
         }
 
-        // вспомогательный метод, чтобы при перерисовке графика
-        // сразу применялись состояния чекбоксов
         private void ApplyCheckBoxVisibility()
         {
             if (chart1.Series.IndexOf("Исходные точки") >= 0)
                 chart1.Series["Исходные точки"].Enabled = cbRaw.Checked;
 
-            if (chart1.Series.IndexOf("Скользящее среднее") >= 0)
-                chart1.Series["Скользящее среднее"].Enabled = cbSmooth.Checked;
+            if (chart1.Series.IndexOf("Скользящее среднее (окно 7)") >= 0)
+                chart1.Series["Скользящее среднее (окно 7)"].Enabled = cbSmooth7.Checked;
+
+            if (chart1.Series.IndexOf("Скользящее среднее (окно 11)") >= 0)
+                chart1.Series["Скользящее среднее (окно 11)"].Enabled = cbSmooth11.Checked;
 
             if (chart1.Series.IndexOf("Локальное сглаживание кубическим МНК") >= 0)
                 chart1.Series["Локальное сглаживание кубическим МНК"].Enabled = cbCubic.Checked;
@@ -417,5 +444,15 @@ namespace lb5_Vich.Mat
             if (chart1.Series.IndexOf("Глобальный многочлен 4-й степени") >= 0)
                 chart1.Series["Глобальный многочлен 4-й степени"].Enabled = cbQuartic.Checked;
         }
+        private void chart1_Click(object sender, EventArgs e)
+        {
+           
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+         
+        }
+
     }
 }
